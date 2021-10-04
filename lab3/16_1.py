@@ -33,11 +33,11 @@ def blit_transp(func, screen, color, rect, alpha=100):
         rect = pygame.Rect(rect)
     # bounds for figure not to get out of surface
     bx, by = rect.w / 2, rect.h / 2
-    surface = pygame.Surface((4 * w, 4 * h))  # generating additional surface
+    surface = pygame.Surface((4 * bx, 4 * by))  # generating additional surface
     surface.set_colorkey(BLACK)  # making bg unblitable
     surface.set_alpha(alpha)
-    func(surface, color,  ((w, h), rect.size))
-    screen.blit(surface, (rect.x - w, rect.y - h))
+    func(surface, color,  ((bx, by), rect.size))
+    screen.blit(surface, (rect.x - bx, rect.y - by))
 
 
 # Databases for coords of scrappers and spots
