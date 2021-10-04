@@ -31,12 +31,13 @@ def blit_transp(func, screen, color, rect, alpha=100):
     '''Blits with transparency a figure drawn with a func argument'''
     if type(rect) != pygame.Rect:
         rect = pygame.Rect(rect)
-    w, h = rect.w, rect.h
-    surface = pygame.Surface((1.5 * w, 1.5 * h))
-    surface.set_colorkey(BLACK)
+    # bounds for figure not to get out of surface
+    bx, by = rect.w / 2, rect.h / 2
+    surface = pygame.Surface((4 * w, 4 * h))  # generating additional surface
+    surface.set_colorkey(BLACK)  # making bg unblitable
     surface.set_alpha(alpha)
-    func(surface, color,  ((0, 0), rect.size))
-    screen.blit(surface, (rect.x, rect.y))
+    func(surface, color,  ((w, h), rect.size))
+    screen.blit(surface, (rect.x - w, rect.y - h))
 
 
 # Databases for coords of scrappers and spots
