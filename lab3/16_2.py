@@ -48,40 +48,48 @@ def ellipse_center(surface, color, coord):
     return rect
 
 
-# Way of adjusting coordinates if getting from screen. To be removed.
-# spots = [((c[0] + bndx, c[1] + bndy), s) for (c, s) in spots]
-# for i in range(len(spots)):
-#     # spots[i] = (spots[i][0], spots[i+1][0])
-#     print('        ', spots[i], end=',\n')
-for i, (color, scrapper) in enumerate(skyscrappers):
-    # print(scrapper)
-    w, h = scrapper[1]
-    w -= scrapper[0][0]
-    h -= scrapper[0][1]
-    draw_moved(blit_transp, ellipse, screen, Color(PALEGRAY),
-               rect=spots[i], alpha=140)
-    draw_moved(rect, screen, Color(color), rect=scrapper)
-for j in range(i, 7):
-    draw_moved(blit_transp, ellipse, screen, Color(PALEGRAY),
-               rect=spots[j], alpha=140)
-    # print((w, h), end=',\n')
-    # skyscrappers[i] = scrapper[0], (w, h)
-# To be removed in release version.
-# for it in skyscrappers.items():
-#     print("'{}'".format(it[0]), it[1], sep=': ', end=',\n')
-# for spot in spots:
-# for h in houses:
-#     blit_transp(rect, *h)
+def draw_scrappers(surface):
+    for i, (color, scrapper) in enumerate(skyscrappers):
+        # print(scrapper)
+        w, h = scrapper[1]
+        w -= scrapper[0][0]
+        h -= scrapper[0][1]
+        draw_moved(rect, surface, Color(color), rect=scrapper)
 
-ellipse_center(screen, BLACK, car['black'][-1])
-for color in car:
-    if color != 'black':
-        for p in car[color]:
-            rect(screen, Color(color), p)
-    else:
-        for p in car[color][:-1]:
-            ellipse_center(screen, Color(color), p)
 
+def draw_scrappers_orig(surface):
+    for i, (color, scrapper) in enumerate(skyscrappers):
+        # print(scrapper)
+        w, h = scrapper[1]
+        w -= scrapper[0][0]
+        h -= scrapper[0][1]
+        draw_moved(blit_transp, ellipse, surface, Color(PALEGRAY),
+                   rect=spots[i], alpha=140)
+        draw_moved(rect, surface, Color(color), rect=scrapper)
+
+
+def draw_spots(surface, nums=None):
+    if nums is None:
+        nums = range(7)
+    for j in nums:
+        draw_moved(blit_transp, ellipse, surface, Color(PALEGRAY),
+                   rect=spots[j], alpha=140)
+
+
+def draw_car(surface):
+    ellipse_center(screen, BLACK, car['black'][-1])
+    for color in car:
+        if color != 'black':
+            for p in car[color]:
+                rect(screen, Color(color), p)
+        else:
+            for p in car[color][:-1]:
+                ellipse_center(screen, Color(color), p)
+
+
+draw_scrappers_orig(screen)
+draw_spots(screen, range(4, 7))
+draw_car(screen)
 
 pygame.display.update()
 clock = pygame.time.Clock()
