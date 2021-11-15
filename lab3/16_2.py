@@ -1,42 +1,45 @@
 import pygame
 from pygame.transform import flip, scale, rotozoom
-from pygame.draw import rect, ellipse
+from pygame.draw import rect as draw_rect, ellipse as draw_ellipse
 from pygame.color import Color
 from pygame.rect import Rect
-from pic_params import *
-
+from pic_params import WHITE, BLACK, PALEGRAY, GROUND_GREEN
+import pic_params as pic
+# pygame.draw.Draw
 pygame.init()
-size = 630, 890
+size = 630, 1080
 FPS = 30
 
-bndx, bndy = 0, 0  # boundaries of picture
+bndx, bndy = -5, -5  # boundaries of picture
 
 
-def draw_bounded(func, *args, rect, **kwargs):
+def draw_bounded(surface, func, *args, rect, **kwargs):
     '''Function for shift draw, helps make bounds'''
-    func(*args, ((rect[0][0] - bndx, rect[0][1] - bndy), rect[1]), **kwargs)
+    func(surface, *args, ((rect[0][0] - bndx, rect[0][1] - bndy),
+         rect[1]), **kwargs)
 
 
 # screen size counted with bounds
 screen = pygame.display.set_mode((size[0] - 2 * bndx, size[1] - 2 * bndy))
 
 
-def blit_transp(draw_figure, screen, rect, color=WHITE, alpha=100):
+def blit_transp(screen, draw_figure, rect, color=WHITE, colorkey=BLACK,
+                alpha=100):
     '''Blits with transparency a figure drawn with a func argument'''
     if type(rect) != Rect:
         rect = Rect(rect)
     # bounds for figure not to get out of surface
     bx, by = rect.w / 2, rect.h / 2
     surface = pygame.Surface((4 * bx, 4 * by))  # generating additional surface
-    surface.set_colorkey(BLACK)  # making bg unblitable
-    surface.set_alpha(alpha)
+    surface.set_colorkey(colorkey)  # making bg unblitable
     draw_figure(surface, color, ((bx, by), rect.size))
-    screen.blit(surface, (rect.x - bx, rect.y - by))
+    # screen.blit(surface,screen (rect.x - bx, rect.y - by))
+    print("blitted", draw_figure)
 
 
-def master_draw(screen, draw_pic, *args, scale_factor=1, fit_rect=None,
+def master_draw(screen, draw_pic, *args, scale_factor=(1, 1), fit_rect=None,
                 orig_size=(630, 890), reverse=False, rotation=False,
-                alpha=255, **kwargs):
+                alpha=5, colorkey=BLACK, **kwargs):
     '''
     Mastering component to the result screen.
     With a given fit_rect brings a picture to that's size
@@ -44,19 +47,23 @@ def master_draw(screen, draw_pic, *args, scale_factor=1, fit_rect=None,
     '''
     if fit_rect is None:
         fit_rect = Rect(screen)
+    elif scale_factor == (1, 1):
+        scale_factor = (fit_rect.w // orig_size[0], fit_rect.h // orig_size[1])
     elif type(fit_rect) != Rect:
         fit_rect = Rect(fit_rect)
-    elif scale_factor == 1:
-        scale_factor = fit_rect.w / orig_size[0]
     surface = pygame.Surface(orig_size)
     draw_pic(surface, *args, **kwargs)
     if rotation:
-        rotozoom(screen, rotation, scale_factor)
+        surface = rotozoom(surface, rotation, scale_factor)
     else:
-        scale(screen, scale_factor)
+        surface = scale(surface, scale_factor)
     if reverse:
-        flip(surface)
-    blit_transp(lambda *args: None, screen, WHITE, fit_rect, alpha=alpha)
+        surface = flip(surface)
+
+    blit_transp(screen, lambda some_surf, color, rect: some_surf.blit(surface,
+                rect), fit_rect, alpha=alpha)
+
+    print("blitted", )
 
 
 def draw_bg(screen):
@@ -64,10 +71,10 @@ def draw_bg(screen):
     Draws a background of the picture.
     '''
     screen.fill(WHITE)
-    draw_bounded(rect, screen, Color('azure3'), rect=((0, 0), (630, 565)))
-    draw_bounded(rect, screen, GROUND_GREEN, rect=((0, 570), (630, 320)))
-    draw_bounded(ellipse, screen, Color('azure2'),
-                 rect=((-50, 740), (800, 300)))
+    draw_bounded(screen, draw_rect, Color('azure3'), rect=((0, 0), (630, 565)))
+    draw_bounded(screen, draw_rect, GROUND_GREEN, rect=((0, 570), (630, 320)))
+    # draw_bounded(ellipse, screen, Color('azure2'),
+    #              rect=((-50, 740), (800, 300)))
 
 
 def ellipse_center(surface, color, coord):
@@ -80,7 +87,7 @@ def ellipse_center(surface, color, coord):
     center, (w, h) = coord
     rect = Rect(0, 0, 2 * w, 2 * h)
     rect.center = center
-    ellipse(surface, color, rect)
+    draw_ellipse(surface, color, rect)
     return rect
 
 
@@ -88,12 +95,12 @@ def draw_scrappers(surface):
     '''
     Function drawing the scrappers with parameters from data.
     '''
-    for i, (color, scrapper) in enumerate(skyscrappers):
-        # print(scrapper)
-        w, h = scrapper[1]
-        w -= scrapper[0][0]
-        h -= scrapper[0][1]
-        draw_bounded(rect, surface, Color(color), rect=scrapper)
+    surface.fill(Color('white'))
+    draw_bounded(surface, draw_rect, Color('azure3'),
+                 rect=((0, 0), (630, 565)))
+    for i, (color, scrapper) in enumerate(pic.skyscrappers):
+        draw_bounded(surface, draw_rect, Color(color), rect=scrapper)
+        # screen.blit(surface, Rect((0, 0), (500, 500)))
 
 
 def draw_scrappers_orig(surface):
@@ -101,14 +108,10 @@ def draw_scrappers_orig(surface):
     Function drawing the scrappers with parameters from data.
     Interfering with spots.
     '''
-    for i, (color, scrapper) in enumerate(skyscrappers):
-        # print(scrapper)
-        w, h = scrapper[1]
-        w -= scrapper[0][0]
-        h -= scrapper[0][1]
-        draw_bounded(blit_transp, ellipse, surface, color=Color(PALEGRAY),
-                     rect=spots[i], alpha=140)
-        draw_bounded(rect, surface, Color(color), rect=scrapper)
+    for i, (color, scrapper) in enumerate(pic.skyscrappers):
+        draw_bounded(screen, blit_transp, draw_ellipse, color=Color(PALEGRAY),
+                     rect=pic.spots[i], alpha=140)
+        draw_bounded(surface, draw_rect, Color(color), rect=scrapper)
 
 
 def draw_spots(surface, nums=None):
@@ -119,25 +122,36 @@ def draw_spots(surface, nums=None):
     if nums is None:
         nums = range(7)
     for j in nums:
-        draw_bounded(blit_transp, ellipse, surface, color=Color(PALEGRAY),
-                     rect=spots[j], alpha=140)
+        draw_bounded(blit_transp, screen, draw_ellipse, color=Color(PALEGRAY),
+                     rect=pic.spots[j], alpha=140)
 
 
 def draw_car(surface):
     '''
     Function drawing the car with parameters from data.
     '''
-    ellipse_center(screen, BLACK, car['black'][-1])
-    for color in car:
+    ellipse_center(screen, BLACK, pic.car['black'][-1])
+    for color in pic.car:
         if color != 'black':
-            for p in car[color]:
-                rect(screen, Color(color), p)
+            for p in pic.car[color]:
+                draw_rect(screen, Color(color), p)
         else:
-            for p in car[color][:-1]:
+            for p in pic.car[color][:-1]:
                 ellipse_center(screen, Color(color), p)
 
 
-def draw_result_picture(screen):
+def draw_brand_new_picture(screen):
+    '''
+    Function drawing the whole picture with parameters from data.
+    '''
+    draw_bg(screen)
+    # (360, 785), (220, 305),
+    master_draw(screen, draw_scrappers,
+                fit_rect=Rect((220, 305), (size[1] - 220, 545)))
+    # draw_car(screen)
+
+
+def draw_orig_picture(screen):
     '''
     Function drawing the whole picture with parameters from data.
     '''
@@ -147,7 +161,7 @@ def draw_result_picture(screen):
     draw_car(screen)
 
 
-draw_result_picture(screen)
+draw_brand_new_picture(screen)
 pygame.display.update()
 clock = pygame.time.Clock()
 finished = False
