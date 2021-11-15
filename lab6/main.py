@@ -1,85 +1,9 @@
 import pygame
 from pygame.color import Color
 from circles import Circles
-import os
+from statistics import Statistics, StatisticsFile
 from os import path
-
-pygame.init()
-
-
-def render_text(surface, text, text_coord, font, color=None, align='center'):
-    if color is None:
-        color = pygame.color.Color('gray')
-    text_surface = font.render(text, True, color)
-    text_rect = text_surface.get_rect()
-
-    if align == 'center':
-        text_rect.midtop = text_coord
-    elif align == 'left':
-        text_rect.topleft = text_coord
-    elif align == 'right':
-        text_rect.topright = text_coord
-
-    surface.blit(text_surface, text_rect)
-    return text_rect.height
-
-
-class StatisticsFile:
-    """
-    Distinct class for safe work with statistics file
-    While initializing checks the file format
-    games - number of played games
-    highscores - 5 best scores
-    """
-    NAME = os.path.join('data', 'statistics.txt')
-    OPTIONS = {'games': 0, 'highscores': 1}  # Sequence of values saving
-
-    def reset(self):
-        with open(self.NAME, 'w') as f:
-            f.writelines(('games = 0\n'  # format of file
-                          'highscores = 0 0 0 0 0\n'))
-
-    def __init__(self):
-        try:
-            stats = self.get_all()
-            # checking format
-            if not(len(stats['games']) == 1 and
-                   len(stats['highscores']) == 5):
-                self.reset()
-        except (FileNotFoundError, ValueError, KeyError):
-            self.reset()
-
-    def add_stat(self, stat):
-        death, score = stat
-        stats = self.get_all()
-
-        stats['games'][death] += 1
-
-        stats['highscores'].append(score)
-        stats['highscores'].sort(reverse=True)
-        stats['highscores'].pop()  # Top 5 leave
-
-        stats = tuple(' = '.join((key, ' '.join((str(x) for x in val)))) + '\n'
-                      for (key, val) in stats.items())
-
-        with open(self.NAME, 'w') as f:
-            f.writelines(stats)
-
-    def get(self, option):
-        with open(self.NAME) as f:
-            stats = f.readlines()
-        return stats[self.OPTIONS[option]].strip().split(' = ')[1].split()
-
-    def get_all(self, string=False):
-        with open(self.NAME) as f:
-            stats = f.readlines()
-        stats = dict(line.strip().split(' = ') for line in stats)
-        if not string:
-            stats = {key: [int(x) for x in stats[key].split()]
-                     for key in stats}
-        else:
-            stats = {key: stats[key].split() for key in stats}
-        return stats
+from rendering import render_text
 
 
 class Game:
@@ -87,14 +11,16 @@ class Game:
     The main class for controlling game flow
     """
     FONT_NAME = path.join('data', 'mr_AfronikG.ttf')
-    SMALL_FONT = pygame.font.Font(FONT_NAME, 40)
     BG_FILENAME = path.join('data', 'images', 'background.jpg')
 
     def __init__(self):
         '''
         Setting background, generating circles
         '''
+        self.SMALL_FONT = pygame.font.Font(self.FONT_NAME, 40)
+        # self.MED_FONT = pygame.font.Font(FONT_NAME, 35)
         self.score = 0
+        self.status_rect = pygame.Rect(0, 0, 150, 50)
         self.set_bg()
         self.gen_circles()
 
@@ -133,9 +59,10 @@ class Game:
         '''
         Rendering status bar with score
         '''
+        # screen.fill(Color('cadetblue3'), self.status_rect)
         render_text(screen, f"Счёт: {round(self.score, 2)}",
-                    (20, 10), self.SMALL_FONT,
-                    color=Color('lightgray'), align='left')
+                    (20, 35), self.SMALL_FONT,
+                    color=Color('orange'), align='left').inflate(2, 2)
 
     def mainloop(self):
         '''
@@ -178,18 +105,22 @@ class Game:
         '''
         Saving statistics
         '''
-        StatisticsFile().add_stat((0, self.score))
-        self.show_statistics()
+        StatisticsFile().add_stat((0, round(self.score)))
+        Statistics(screen, self.SMALL_FONT).show()
 
-    def show_statistics(self):
-        '''
-        Show best score table
-        '''
-        pass
+        waiting = 2
+        while waiting > 0:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    waiting = 0
+                elif event.type == pygame.KEYDOWN:
+                    if event.key in (pygame.K_RETURN, pygame.K_ESCAPE):
+                        waiting -= 1
 
 
 if __name__ == "__main__":
     try:
+        pygame.init()
         size = 1600, 960
         screen = pygame.display.set_mode(size)
         game = Game()
