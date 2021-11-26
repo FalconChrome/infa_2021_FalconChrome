@@ -3,7 +3,7 @@ from pygame.color import Color
 from circles import Circles
 from statistics import Statistics, StatisticsFile
 from os import path
-from rendering import render_text
+from rendering import Label, render_text
 
 
 class Game:
@@ -37,9 +37,9 @@ class Game:
                                     circle_type='osu', frequency=2),)
 
     def process_event(self, event):
-        '''
+        """
         Process mouse click and keys press
-        '''
+        """
         if event.type == pygame.MOUSEBUTTONDOWN:
             for circles in self.circles_set:
                 # add score when clicked circle
@@ -64,24 +64,45 @@ class Game:
                     (20, 35), self.SMALL_FONT,
                     color=Color('orange'), align='left').inflate(2, 2)
 
-    def mainloop(self):
-        '''
-        Main loop proccessing game events
-        '''
+    def meet_player(self):
+        """
+        Ask player level of difficulty
+        """
         FPS = 24
         clock = pygame.time.Clock()
         finished = False
         while not finished:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    self.end()
-                    finished = True
+                    return 0
+                elif event.type == pygame.K_UP:
+                    if event.key in (pygame.K_SPACE, pygame.K_ESC,
+                                     pygame.K_RETURN):
+                        return 1
+            clock.tick(FPS)
+
+    def mainloop(self):
+        """
+        Main loop proccessing game events
+        """
+        FPS = 24
+        clock = pygame.time.Clock()
+        finished = False
+        while not finished:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    return 0
                 else:
                     self.process_event(event)
 
             self.update(FPS)
             self.render()
             clock.tick(FPS)
+
+    def play(self):
+        self.meet_player()
+        self.mainloop()
+        self.end()
 
     def update(self, FPS):
         '''
@@ -124,6 +145,6 @@ if __name__ == "__main__":
         size = 1600, 960
         screen = pygame.display.set_mode(size)
         game = Game()
-        game.mainloop()
+        game.play()
     finally:
         pygame.quit()
