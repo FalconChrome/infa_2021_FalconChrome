@@ -1,7 +1,7 @@
 from os.path import join as pjoin
 from pygame import Rect, Color, display
 from pygame.draw import ellipse as draw_ellipse
-from rendering import render_text
+from rendering import Label
 
 
 class StatisticsFile:
@@ -28,12 +28,12 @@ class StatisticsFile:
                 self.reset()
         except (FileNotFoundError, ValueError, KeyError) as e:
             print(e)
+            print("Statistics reset.")
             self.reset()
 
     def add_stat(self, stat):
         death, score = stat
         stats = self.get_all()
-        print("stats now:", stats)
         stats['games'][death] += 1
 
         stats['highscores'].append(score)
@@ -43,11 +43,8 @@ class StatisticsFile:
                             + '\n'
                             for (key, val) in stats.items())
 
-        print("stat lines:", stats_lines)
         with open(self.NAME, 'w') as f:
             f.writelines(stats_lines)
-        with open(self.NAME) as f:
-            print("stat file after:", f.read())
 
     def get(self, option):
         with open(self.NAME) as f:
@@ -57,7 +54,6 @@ class StatisticsFile:
     def get_all(self, string=False):
         with open(self.NAME) as f:
             stats = f.readlines()
-            print("got:", stats)
         stats = dict(line.strip().split(' = ') for line in stats)
         if not string:
             stats = {key: [int(x) for x in stats[key].split()]
@@ -77,27 +73,29 @@ class Statistics:
         '''
         self.font = font
         self.screen = screen
+        self.rect = Rect(0, 0, 600, 600)
+        self.rect.center = self.screen.get_rect().center
 
     def show(self):
-        stats_rect = Rect(0, 0, 600, 600)
-        stats_rect.center = self.screen.get_rect().center
         display.set_caption("Статистика")
-        draw_ellipse(self.screen, self.BG_COLOR, stats_rect)
-        draw_ellipse(self.screen, self.BLACK, stats_rect, 7)
-        pos = [stats_rect.centerx, stats_rect.y + stats_rect.h // 6]
+        draw_ellipse(self.screen, self.BG_COLOR, self.rect)
+        draw_ellipse(self.screen, self.BLACK, self.rect, 7)
+        pos = [self.rect.centerx, self.rect.y + self.rect.h // 6]
         self.render_stats(pos)
         display.update()
 
     def render_stats(self, pos):
         stats = StatisticsFile().get_all(string=True)
-        text = (f"Всего игр: {stats['games'][0]}",
-                "Лучшие результаты:",
-                *(score.rjust(6, '0') for score in stats['highscores']))
+        summary_text = (f"Всего игр: {stats['games'][0]}",)
+        highscore_text = ("Лучшие результаты:",
+                          *(score.rjust(6, '0')
+                            for score in stats['highscores']))
 
-        pos[1] += self.step_line(text[0], pos) + 20
-        for line in text[1:]:
-            pos[1] += self.step_line(line, pos)
-
-    def step_line(self, line, pos):
-        h = render_text(self.screen, line, pos, self.font, self.BLACK).h
-        return 20 + h
+        summary_label = Label(pos, self.font, summary_text, color=self.BLACK)
+        summary_label_rect = summary_label.render(self.screen)
+        print("sum label:", summary_label_rect)
+        pos[1] = summary_label_rect.bottom + 20
+        print(pos)
+        highscore_label = Label(pos, self.font, highscore_text,
+                                color=self.BLACK)
+        highscore_label.render(self.screen)
