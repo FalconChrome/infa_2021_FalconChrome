@@ -125,7 +125,7 @@ class CircleOsu(Circle):
 
     def gen_end_image(self, r):
         end_image = self.init_image.copy()
-        circle(end_image, Color("navy"), (r, r), r, width=r//6)
+        circle(end_image, Color("limegreen"), (r, r), r, width=r//6)
         return end_image
 
     def update(self, *args):
@@ -140,7 +140,7 @@ class CircleOsu(Circle):
     def score(self):
         accuracy = abs(self.count - self.max_count) / self.max_count
         if accuracy <= 0.05:  # Pure perfect
-            score = 2
+            score = 3
         elif accuracy <= 0.25:  # Perfect
             score = 2 - 16 * accuracy ** 2
         elif accuracy <= 0.5:  # Good
@@ -160,6 +160,7 @@ class Circles:
     N_MAX = 5
     TYPES = {'': Circle, 'moving': MovingCircle, 'osu': CircleOsu,
              'movingosu': MovingCircleOsu}
+    LOSE = 12
 
     def __init__(self, bounds, *groups, circle_type='', frequency=2):
         self.groups = groups
@@ -169,17 +170,19 @@ class Circles:
         self.circles = []
         self.frequency = frequency
         self.count = 0
-        self.color = 180
+        self.fail = 0
+        self.lose = False
+        self.hue = 180
 
     def gen_rand_circle(self, *args):
-        self.circles.append(
-            self.Circle(*args, self.bounds, *self.groups, hue=self.color)
-        )
+        new_circle = self.Circle(*args, self.bounds, *self.groups,
+                                 hue=self.hue)
+        self.circles.insert(0, new_circle)
 
-    def kill_circle(self, index=0):
+    def kill_circle(self, index=-1):
         try:
             victim = self.circles.pop(index)
-            score = victim.score()
+            score = victim.score() * 100
             victim.kill()
             return score
         except IndexError:
@@ -189,16 +192,22 @@ class Circles:
         for (i, c) in enumerate(self.circles):
             if c.click(pos):
                 score = self.kill_circle(i)
+                self.fail -= score / 500
+                if self.fail < 0:
+                    self.fail = 0
                 return score
 
     def update(self, FPS):
         if self.count >= FPS / self.frequency:
             if len(self.circles) >= self.N_MAX:
                 self.kill_circle()
+                self.fail += 1
+                if self.fail >= self.LOSE:
+                    self.lose = True
             if 'osu' in self.circle_type:
                 self.gen_rand_circle(FPS / self.frequency, self.N_MAX)
             else:
                 self.gen_rand_circle()
+            self.frequency += 0.005
             self.count = 0
-            # self.color += 20
         self.count += 1

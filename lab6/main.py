@@ -14,13 +14,18 @@ class Game:
     BG_FILENAME = path.join('data', 'images', 'background.jpg')
 
     def __init__(self):
-        '''
+        """
         Setting background, generating circles
-        '''
+        """
         self.SMALL_FONT = pygame.font.Font(self.FONT_NAME, 40)
         # self.MED_FONT = pygame.font.Font(FONT_NAME, 35)
         self.score = 0
-        self.status_rect = pygame.Rect(0, 0, 150, 50)
+        status_label = Label((20, 35), self.SMALL_FONT, 'Счёт: 0',
+                             color=Color('orange'), align='left')
+        self.status_label = status_label
+        status_label.render(screen)
+        self.lifebar_rect = pygame.Rect(status_label.rect.bottomleft,
+                                        (180, 30))
         self.set_bg()
         self.gen_circles()
 
@@ -56,12 +61,19 @@ class Game:
                         self.score += score
 
     def status_bar(self, screen):
-        '''
-        Rendering status bar with score
-        '''
+        """
+        Rendering status bar with score and life bar
+        """
         # screen.fill(Color('cadetblue3'), self.status_rect)
         self.status_label.set_text(f"Счёт: {round(self.score)}")
         self.status_label.render(screen)
+        life = sum(1 - circles.fail / circles.LOSE
+                   for circles in self.circles_set) / len(self.circles_set)
+        life_rect = self.lifebar_rect.copy()
+        life_rect.w *= life
+        pygame.draw.rect(screen, Color('orangered'), life_rect)
+        pygame.draw.rect(screen, Color('orange'),
+                         self.lifebar_rect, width=4)
 
     def meet_player(self):
         """
@@ -73,11 +85,13 @@ class Game:
         while not finished:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    return 0
+                    finished = True
                 elif event.type == pygame.K_UP:
                     if event.key in (pygame.K_SPACE, pygame.K_ESC,
                                      pygame.K_RETURN):
-                        return 1
+                        finished = True
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    finished = True
             clock.tick(FPS)
 
     def mainloop(self):
@@ -86,11 +100,11 @@ class Game:
         """
         FPS = 24
         clock = pygame.time.Clock()
-        finished = False
-        while not finished:
+        self.running = True
+        while self.running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    return 0
+                    self.running = False
                 else:
                     self.process_event(event)
 
@@ -98,23 +112,20 @@ class Game:
             self.render()
             clock.tick(FPS)
 
-    def play(self):
-        self.meet_player()
-        self.mainloop()
-        self.end()
-
     def update(self, FPS):
-        '''
+        """
         Update circles container and then each circle aside
-        '''
+        """
         for circles in self.circles_set:
             circles.update(FPS)
+            if circles.lose:
+                self.running = False
         self.circle_group.update(FPS, size)
 
     def render(self):
-        '''
+        """
         Rendering background, circles and status bar
-        '''
+        """
         screen.blit(self.bg_image, ((0, 0), size))
         self.circle_group.draw(screen)
         self.status_bar(screen)
@@ -122,9 +133,9 @@ class Game:
         pygame.display.update()
 
     def end(self):
-        '''
+        """
         Saving statistics
-        '''
+        """
         StatisticsFile().add_stat((0, round(self.score)))
         Statistics(screen, self.SMALL_FONT).show()
 
@@ -136,6 +147,11 @@ class Game:
                 elif event.type == pygame.KEYDOWN:
                     if event.key in (pygame.K_RETURN, pygame.K_ESCAPE):
                         waiting -= 1
+
+    def play(self):
+        self.meet_player()
+        self.mainloop()
+        self.end()
 
 
 if __name__ == "__main__":
