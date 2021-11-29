@@ -3,7 +3,7 @@ from pygame.color import Color
 from circles import Circles
 from statistics import Statistics, StatisticsFile
 from os import path
-from rendering import Label, render_text
+from textrender import Label
 
 
 class Game:
@@ -60,9 +60,8 @@ class Game:
         Rendering status bar with score
         '''
         # screen.fill(Color('cadetblue3'), self.status_rect)
-        render_text(screen, f"Счёт: {round(self.score, 2)}",
-                    (20, 35), self.SMALL_FONT,
-                    color=Color('orange'), align='left').inflate(2, 2)
+        self.status_label.set_text(f"Счёт: {round(self.score)}")
+        self.status_label.render(screen)
 
     def meet_player(self):
         """

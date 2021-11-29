@@ -1,7 +1,7 @@
 from os.path import join as pjoin
 from pygame import Rect, Color, display
 from pygame.draw import ellipse as draw_ellipse
-from rendering import Label
+from textrender import Label
 
 
 class StatisticsFile:
@@ -86,16 +86,15 @@ class Statistics:
 
     def render_stats(self, pos):
         stats = StatisticsFile().get_all(string=True)
-        summary_text = (f"Всего игр: {stats['games'][0]}",)
-        highscore_text = ("Лучшие результаты:",
-                          *(score.rjust(6, '0')
-                            for score in stats['highscores']))
+        summary_text = f"Всего игр: {stats['games'][0]}"
+        highscore_text = ("Лучшие результаты:",) +\
+            tuple(score.rjust(6, '0') for score in stats['highscores'])
 
         summary_label = Label(pos, self.font, summary_text, color=self.BLACK)
         summary_label_rect = summary_label.render(self.screen)
         print("sum label:", summary_label_rect)
         pos[1] = summary_label_rect.bottom + 20
         print(pos)
-        highscore_label = Label(pos, self.font, highscore_text,
+        highscore_label = Label(pos, self.font, *highscore_text,
                                 color=self.BLACK)
         highscore_label.render(self.screen)

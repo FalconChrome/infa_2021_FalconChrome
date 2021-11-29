@@ -22,9 +22,9 @@ class Circle(sprite.Sprite):
     R_MAX = 60
 
     def gen_image(self, r, hue):
-        '''
+        """
         Function generating circle image
-        '''
+        """
         image = surface.Surface((2 * r,) * 2)
         image.set_colorkey(BLACK)
         color = Color(BLACK)
@@ -63,9 +63,9 @@ class MovingCircle(Circle):
         self.v = [randintsigned(20, 100) for _ in range(2)]
 
     def update(self, FPS, size, *args):
-        '''
+        """
         Move circle
-        '''
+        """
         super().update(*args)
         new_coords = []
         for i in range(2):
