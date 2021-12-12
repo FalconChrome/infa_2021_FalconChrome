@@ -17,7 +17,8 @@ class Game:
         """
         Setting background, generating circles
         """
-        self.screen = pygame.display.set_mode(SIZE)
+        self.SIZE = 1600, 960
+        self.screen = pygame.display.set_mode(self.SIZE)
         self.SMALL_FONT = pygame.font.Font(self.FONT_NAME, 40)
         self.score = 0
         status_label = Label((20, 35), self.SMALL_FONT, 'Счёт: 0',
@@ -33,12 +34,12 @@ class Game:
         self.bg_image = pygame.image.load(self.BG_FILENAME).convert_alpha()
         self.bg_image = pygame.transform.scale(self.bg_image,
                                                self.screen.get_size())
-        self.screen.blit(self.bg_image, ((0, 0), SIZE))
+        self.screen.blit(self.bg_image, ((0, 0), self.SIZE))
         pygame.display.update()
 
     def gen_circles(self):
         self.circle_group = pygame.sprite.Group()
-        self.circles_set = (Circles(SIZE, self.circle_group,
+        self.circles_set = (Circles(self.SIZE, self.circle_group,
                                     circle_type='osu', frequency=2, amount=10),)
 
     def process_event(self, event):
@@ -119,13 +120,13 @@ class Game:
             circles.update(FPS)
             if circles.complete:
                 self.running = False
-        self.circle_group.update(FPS, SIZE)
+        self.circle_group.update(FPS, self.SIZE)
 
     def render(self):
         """
         Rendering background, circles and status bar
         """
-        self.screen.blit(self.bg_image, ((0, 0), SIZE))
+        self.screen.blit(self.bg_image, ((0, 0), self.SIZE))
         self.circle_group.draw(self.screen)
         self.status_bar()
 
@@ -155,7 +156,6 @@ class Game:
 
 if __name__ == "__main__":
     pygame.init()
-    SIZE = 1600, 960
     game = Game()
     game.play()
     pygame.quit()
