@@ -17,13 +17,13 @@ class Game:
         """
         Setting background, generating circles
         """
+        self.screen = pygame.display.set_mode(SIZE)
         self.SMALL_FONT = pygame.font.Font(self.FONT_NAME, 40)
-        # self.MED_FONT = pygame.font.Font(FONT_NAME, 35)
         self.score = 0
         status_label = Label((20, 35), self.SMALL_FONT, 'Счёт: 0',
                              color=Color('orange'), align='left')
         self.status_label = status_label
-        status_label.render(screen)
+        status_label.render(self.screen)
         self.lifebar_rect = pygame.Rect(status_label.rect.bottomleft,
                                         (180, 30))
         self.set_bg()
@@ -32,14 +32,14 @@ class Game:
     def set_bg(self):
         self.bg_image = pygame.image.load(self.BG_FILENAME).convert_alpha()
         self.bg_image = pygame.transform.scale(self.bg_image,
-                                               screen.get_size())
-        screen.blit(self.bg_image, ((0, 0), size))
+                                               self.screen.get_size())
+        self.screen.blit(self.bg_image, ((0, 0), SIZE))
         pygame.display.update()
 
     def gen_circles(self):
         self.circle_group = pygame.sprite.Group()
-        self.circles_set = (Circles(size, self.circle_group,
-                                    circle_type='osu', frequency=2),)
+        self.circles_set = (Circles(SIZE, self.circle_group,
+                                    circle_type='osu', frequency=2, amount=10),)
 
     def process_event(self, event):
         """
@@ -60,19 +60,18 @@ class Game:
                     if score is not None:
                         self.score += score
 
-    def status_bar(self, screen):
+    def status_bar(self):
         """
         Rendering status bar with score and life bar
         """
-        # screen.fill(Color('cadetblue3'), self.status_rect)
         self.status_label.set_text(f"Счёт: {round(self.score)}")
-        self.status_label.render(screen)
-        life = sum(1 - circles.fail / circles.LOSE
+        self.status_label.render(self.screen)
+        life = sum(1 - circles.fails / circles.LOSE
                    for circles in self.circles_set) / len(self.circles_set)
         life_rect = self.lifebar_rect.copy()
         life_rect.w *= life
-        pygame.draw.rect(screen, Color('orangered'), life_rect)
-        pygame.draw.rect(screen, Color('orange'),
+        pygame.draw.rect(self.screen, Color('orangered'), life_rect)
+        pygame.draw.rect(self.screen, Color('orange'),
                          self.lifebar_rect, width=4)
 
     def meet_player(self):
@@ -118,17 +117,17 @@ class Game:
         """
         for circles in self.circles_set:
             circles.update(FPS)
-            if circles.lose:
+            if circles.complete:
                 self.running = False
-        self.circle_group.update(FPS, size)
+        self.circle_group.update(FPS, SIZE)
 
     def render(self):
         """
         Rendering background, circles and status bar
         """
-        screen.blit(self.bg_image, ((0, 0), size))
-        self.circle_group.draw(screen)
-        self.status_bar(screen)
+        self.screen.blit(self.bg_image, ((0, 0), SIZE))
+        self.circle_group.draw(self.screen)
+        self.status_bar()
 
         pygame.display.update()
 
@@ -137,7 +136,7 @@ class Game:
         Saving statistics
         """
         StatisticsFile().add_stat((0, round(self.score)))
-        Statistics(screen, self.SMALL_FONT).show()
+        Statistics(self.screen, self.SMALL_FONT).show()
 
         waiting = 2
         while waiting > 0:
@@ -155,11 +154,8 @@ class Game:
 
 
 if __name__ == "__main__":
-    try:
-        pygame.init()
-        size = 1600, 960
-        screen = pygame.display.set_mode(size)
-        game = Game()
-        game.play()
-    finally:
-        pygame.quit()
+    pygame.init()
+    SIZE = 1600, 960
+    game = Game()
+    game.play()
+    pygame.quit()
