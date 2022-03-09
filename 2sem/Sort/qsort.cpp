@@ -1,5 +1,6 @@
 #include <iostream>
 #include <random>
+#define NDEBUG
 #include <cassert>
 
 using namespace std;
